@@ -25,9 +25,7 @@ def create_user():
 # to see all users
 @uc.route('/alluser')
 def all_user():
-    users = service.alluser()
-
-    
+    users = service.alluser()    
     user_list = [{"id": user.id,"first_name":user.first_name,"last_name":user.last_name,"email":user.email} for user in users]
 
     return jsonify(user_list)
@@ -74,4 +72,4 @@ def update_user():
     if updated:
         return jsonify({'message': 'User updated successfully'})
     else:
-        return jsonify({'error': 'User not found'}), 404
+        return jsonify({'error': 'User not found'}), 
