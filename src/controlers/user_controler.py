@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from infrastructure.user_database import db
 from services.crud_service import crud_service
 
+
 # create blueprint for app
 uc = Blueprint('uc', __name__)
 

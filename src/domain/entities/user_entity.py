@@ -1,3 +1,4 @@
+from werkzeug.security import generate_password_hash
 class user_entitiy:
     def __init__(self,username,first_name,last_name,email,password1):
         self.username = username
