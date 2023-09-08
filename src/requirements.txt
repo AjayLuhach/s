@@ -1,0 +1,6 @@
+Flask 
+SQLAlchemy 
+virtualenv==20.24.4
+Flask-Login 
+flask_sqlalchemy 
+psycopg2
