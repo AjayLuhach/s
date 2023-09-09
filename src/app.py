@@ -4,8 +4,10 @@ from flask import request, jsonify
 from domain.model.user_model import user_model
 from infrastructure.user_database import db 
 from flask_login import LoginManager, login_user, logout_user, login_required
+from  flask_bcrypt  import Bcrypt 
 
 app= Flask(__name__)
+bcrypt = Bcrypt(app)
 app.config.from_object('config')
 app.secret_key = 'ajay'
 
@@ -132,5 +134,5 @@ def update_user():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=80)
  
