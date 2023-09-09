@@ -4,8 +4,7 @@ from flask import request, jsonify
 from domain.model.user_model import user_model
 from infrastructure.user_database import db 
 from flask_login import LoginManager, login_user, logout_user, login_required
-from  flask_bcrypt  import Bcrypt 
-
+from flask_bcrypt import Bcrypt
 app= Flask(__name__)
 bcrypt = Bcrypt(app)
 app.config.from_object('config')
@@ -41,10 +40,11 @@ def register_user():
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
     email = request.args.get('email')
+    password2 = bcrypt.generate_password_hash(password1).decode('utf-8')
     print(username, password1)
 
     new_user = service.create(username, first_name,
-                              last_name, email, password1)
+                              last_name, email, password2)
     return f"created user: %s" % new_user.first_name
 
 @app.route('/login', methods=['POST'])
@@ -134,5 +134,5 @@ def update_user():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run()
  
