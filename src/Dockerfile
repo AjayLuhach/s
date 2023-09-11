@@ -11,7 +11,8 @@ COPY . /app
 RUN pip install -r requirements.txt
 
 # Set environment variables
- 
+ENV DATABASE_URL 'postgresql://postgres:ajay@host.docker.internal:5432/todo'
+ENV SQLALCHEMY_TRACK_MODIFICATIONS False
 
 # Make port 80 available to the world outside this container
 EXPOSE 80

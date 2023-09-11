@@ -5,6 +5,10 @@ from domain.model.user_model import user_model
 from infrastructure.user_database import db 
 from flask_login import LoginManager, login_user, logout_user, login_required
 from flask_bcrypt import Bcrypt
+from functools import wraps
+from flask_login import current_user
+ 
+ 
 app= Flask(__name__)
 bcrypt = Bcrypt(app)
 app.config.from_object('config')
@@ -20,6 +24,16 @@ login_manager.init_app(app)
 @login_manager.user_loader
 def load_user(username):
     return user_model.query.get(username)
+
+
+
+def custom_login_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'error': 'Authentication required'}), 401
+        return func(*args, **kwargs)
+    return decorated_view
 
 
 # intialize service
@@ -55,13 +69,16 @@ def login():
 
     # eertrieve the user from the database
     user = service.auser(username)
+ 
+ 
 
-    if user and user.password1==password:
-        login_user(user)
-        return jsonify({'message': 'Login successful'})
+    if bcrypt.check_password_hash(user.password1, password):
+            login_user(user)
+            return jsonify({'message': 'Login successful'})
     else:
         # Invalid username or password
-        return jsonify({'error': 'Invalid credentials'}), 401
+        return jsonify({'error': 'Invalid username or password'}), 401
+
     
     
 @app.route("/logout")
@@ -72,7 +89,7 @@ def logout():
 
 # to see all users
 @app.route('/alluser')
-@login_required
+@custom_login_required
 def all_user():
     users = service.alluser()
     user_list = [{"username": user.username, "first_name": user.first_name,
@@ -134,5 +151,5 @@ def update_user():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0',port=80)
  
