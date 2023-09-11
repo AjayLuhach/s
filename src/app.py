@@ -40,7 +40,7 @@ def custom_login_required(func):
 service = crud_service(db.session)
 
 
-@app.route('/')
+@app.route('/',methods=['GET', 'POST'])
 def home():
     return 'hello'
 
@@ -49,17 +49,18 @@ def home():
 
 @app.route('/create', methods=['POST'])
 def register_user():
+     
     username = request.args.get('username')
     password1 = request.args.get('password1')
     first_name = request.args.get('first_name')
     last_name = request.args.get('last_name')
     email = request.args.get('email')
     password2 = bcrypt.generate_password_hash(password1).decode('utf-8')
-    print(username, password1)
-
     new_user = service.create(username, first_name,
                               last_name, email, password2)
     return f"created user: %s" % new_user.first_name
+
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -106,7 +107,7 @@ def search_user():
     user = service.auser(username)
     if user:
         user_data = {
-            "id": user.username,
+            "username": user.username,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "email": user.email
