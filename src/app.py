@@ -10,6 +10,7 @@ from flask_login import current_user
 from flask_oauthlib.client import OAuth
 import random
 import string
+ 
 
 # create a Flask app instance
 app = Flask(__name__)
@@ -25,7 +26,7 @@ app.secret_key = 'ajay'
 
 # initialize the database
 db.init_app(app)
-
+ 
 # create all database tables (if they don't exist)
 with app.app_context():
     db.create_all()
