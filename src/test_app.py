@@ -37,6 +37,6 @@ def test_login_user():
     response = requests.post('http://localhost/login', params=params)
     
     assert response.status_code == 200 #assume a successful response
-    assert "Login successful" in response.text #the response contains "login successful"
+    assert "login successful" in response.text #the response contains "login successful"
     params = {'username':'ajay88'}
     response = requests.delete('http://localhost/delete', params=params)
