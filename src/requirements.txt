@@ -5,3 +5,4 @@ Flask-Login
 flask_sqlalchemy 
 psycopg2
 flask_bcrypt
+Flask-OAuthlib

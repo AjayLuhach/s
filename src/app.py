@@ -1,6 +1,6 @@
 from flask import Flask
 from services.crud_service import crud_service
-from flask import request, jsonify,url_for,session,redirect 
+from flask import request, jsonify,url_for,session,redirect
 from domain.model.user_model import user_model
 from infrastructure.user_database import db 
 from flask_login import LoginManager, login_user, logout_user, login_required
@@ -8,14 +8,14 @@ from flask_bcrypt import Bcrypt
 from functools import wraps
 from flask_login import current_user
 from flask_oauthlib.client import OAuth
-from authlib.integrations.flask_client import OAuth
-import os
+import random
+import string
+ 
 app= Flask(__name__)
 bcrypt = Bcrypt(app)
 app.config.from_object('config')
 app.secret_key = 'ajay'
-app.config['SERVER_NAME'] = 'localhost:80'
-oauth = OAuth(app)
+
 
 db.init_app(app)
 with app.app_context():
@@ -41,43 +41,74 @@ def custom_login_required(func):
 # intialize service
 service = crud_service(db.session)
 
-@app.route('/')
+# Google OAuth configuration
+oauth = OAuth(app)
+google = oauth.remote_app(
+    'google',
+    consumer_key='600241584403-4heepbpsj6e18mu1s5qa7g57l4b2m9v3.apps.googleusercontent.com',  # Replace with your Client ID
+    consumer_secret='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',  # Replace with your Client Secret
+    request_token_params={
+        'scope': 'openid profile email',
+    },
+    base_url='https://www.googleapis.com/oauth2/v1/',
+    request_token_url=None,
+    access_token_method='POST',
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+)
+
+@app.route('/',methods=['GET', 'POST'])
 def home():
-    return 'hello jessie'
+    return 'hello'
 
 
-@app.route('/google/')
-def google():
-   
-    # Google Oauth Config
-    # Get client_id and client_secret from environment variables
-    # For developement purpose you can directly put it
-    # here inside double quotes
-    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
-    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-     
-    CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
-    oauth.register(
-        name='google',
-        client_id='600241584403-4heepbpsj6e18mu1s5qa7g57l4b2m9v3.apps.googleusercontent.com',
-        client_secret='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',
-        server_metadata_url=CONF_URL,
-        client_kwargs={
-            'scope': 'openid email profile'
-        }
-    )
-     
-    # Redirect to google_auth function
-    redirect_uri = url_for('google_auth', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
- 
-@app.route('/google/auth/')
-def google_auth():
-    token = oauth.google.authorize_access_token()
-    user = oauth.google.parse_id_token(token)
-    print(" Google User ", user)
-    return redirect('/')
+@app.route('/google/login')
+def login():
+    return google.authorize(callback=url_for('authorized', _external=True, _scheme='http'))
 
+
+@app.route('/login/google/callback')
+def authorized():
+    resp = google.authorized_response()
+    if resp is None or resp.get('access_token') is None:
+        return 'Access denied: reason={} error={}'.format(
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+    
+    session['google_token'] = (resp['access_token'], '')
+    user_info = google.get('userinfo')
+    
+    # Extract user information
+    username = user_info.data.get('email')  # You can use email as the username
+    first_name = user_info.data.get('given_name')
+    last_name = user_info.data.get('family_name')
+    email = user_info.data.get('email')
+    
+    # Generate a random password for the user (you can change this logic)
+    
+    password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+    
+    # Create a new user in your system
+    password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    user = service.auser(username)
+    if not user:
+        new_user = service.create(username, first_name, last_name, email, password_hash)
+        login_user(new_user)
+    
+    
+    else:
+        login_user(user)
+    
+    
+    # redirect user to desired page    
+    return redirect('/alluser')
+
+
+
+@google.tokengetter
+def get_google_oauth_token():
+    return session.get('google_token')
 
 
 
@@ -98,23 +129,23 @@ def register_user():
 
 
 
-# @app.route('/login', methods=['POST'])
-# def login():
-#     # gget username and password from the request
-#     username = request.args.get('username')
-#     password = request.args.get('password')
+@app.route('/login', methods=['POST'])
+def login_new_user():
+    # gget username and password from the request
+    username = request.args.get('username')
+    password = request.args.get('password')
 
-#     # eertrieve the user from the database
-#     user = service.auser(username)
+    # eertrieve the user from the database
+    user = service.auser(username)
  
  
 
-#     if bcrypt.check_password_hash(user.password1, password):
-#             login_user(user)
-#             return jsonify({'message': 'Login successful'})
-#     else:
-#         # Invalid username or password
-#         return jsonify({'error': 'Invalid username or password'}), 401
+    if bcrypt.check_password_hash(user.password1, password):
+            login_user(user)
+            return jsonify({'message': 'Login successful'})
+    else:
+        # Invalid username or password
+        return jsonify({'error': 'Invalid username or password'}), 401
 
     
     
@@ -126,7 +157,7 @@ def logout():
 
 # to see all users
 @app.route('/alluser')
- 
+@custom_login_required 
 def all_user():
     users = service.alluser()
     user_list = [{"username": user.username, "first_name": user.first_name,
